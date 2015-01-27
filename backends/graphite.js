@@ -226,12 +226,6 @@ exports.init = function graphite_init(startup_time, config, events, logger) {
     if (prefixSet !== "") {
       setsNamespace.push(prefixSet);
     }
-  } else {
-      globalNamespace = ['stats'];
-      counterNamespace = ['stats'];
-      timerNamespace = ['stats', 'timers'];
-      gaugesNamespace = ['stats', 'gauges'];
-      setsNamespace = ['stats', 'sets'];
   }
 
   graphiteStats.last_flush = startup_time;
