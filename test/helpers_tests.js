@@ -112,6 +112,7 @@ module.exports = {
     test.equals(helpers.is_valid_packet(['345345', 'ms', '@.']), false);
     test.equals(helpers.is_valid_packet(['345345', 'ms', '@.1.']), false);
     test.equals(helpers.is_valid_packet(['345345', 'ms', '@.1.2.3']), false);
+    test.equals(helpers.is_valid_packet(['345345', 'ms', '@-1.0']), false);
     test.done();
   },
 
@@ -131,6 +132,12 @@ module.exports = {
 
   correct_packet_with_small_sampling: function (test) {
     var res = helpers.is_valid_packet(['100', 'ms', '@0.1']);
+    test.equals(res, true);
+    test.done();
+  },
+
+  correct_counter_with_float: function (test) {
+    var res = helpers.is_valid_packet(['1.0', 'c', '@0.1']);
     test.equals(res, true);
     test.done();
   }

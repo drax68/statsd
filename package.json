@@ -2,6 +2,7 @@
   "name": "statsd",
   "description": "A simple, lightweight network daemon to collect metrics over UDP",
   "author": "Etsy",
+  "license" : "MIT",
   "scripts": {
     "test": "./run_tests.sh",
     "start": "node stats.js config.js",
@@ -14,6 +15,7 @@
   },
   "version": "0.7.2",
   "dependencies": {
+    "generic-pool": "2.2.0"
   },
   "devDependencies": {
     "nodeunit": "0.7.x",
@@ -21,8 +23,8 @@
     "temp": "0.4.x"
   },
   "optionalDependencies": {
-    "node-syslog":"1.1.7",
-    "hashring":"1.0.1",
+    "node-syslog":"1.2.0",
+    "hashring":"3.2.0",
     "winser": "=0.1.6"
   },
   "engines": {

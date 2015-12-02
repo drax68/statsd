@@ -23,12 +23,13 @@ var sets = {};
 var counter_rates = {};
 var timer_data = {};
 var pctThreshold = null;
-var flushInterval, keyFlushInt, serverLoaded, mgmtServer;
+var flushInterval, keyFlushInt, serversLoaded, mgmtServer;
 var startup_time = Math.round(new Date().getTime() / 1000);
 var backendEvents = new events.EventEmitter();
 var healthStatus = config.healthStatus || 'up';
 var old_timestamp = 0;
 var timestamp_lag_namespace;
+var keyNameSanitize = true;
 
 // Load and init the backend from the backends/ directory.
 function loadBackend(config, name) {
@@ -160,6 +161,16 @@ var stats = {
   }
 };
 
+function sanitizeKeyName(key) {
+  if (keyNameSanitize) {
+    return key.replace(/\s+/g, '_')
+              .replace(/\//g, '-')
+              .replace(/[^a-zA-Z_\-0-9\.]/g, '');
+  } else {
+    return key;
+  }
+}
+
 // Global for the logger
 var l;
 
@@ -184,14 +195,15 @@ config.configFile(process.argv[2], function (config) {
   counters[packets_received] = 0;
   counters[metrics_received] = 0;
 
-  if (!serverLoaded) {
+  if (config.keyNameSanitize !== undefined) {
+    keyNameSanitize = config.keyNameSanitize;
+  }
+  if (!serversLoaded) {
 
     // key counting
     var keyFlushInterval = Number((config.keyFlush && config.keyFlush.interval) || 0);
 
-    // The default server is UDP
-    var server = config.server || './servers/udp'
-    serverLoaded = startServer(config, server, function (msg, rinfo) {
+    var handlePacket = function (msg, rinfo) {
       backendEvents.emit('packet', msg, rinfo);
       counters[packets_received]++;
       var packet_data = msg.toString();
@@ -211,10 +223,7 @@ config.configFile(process.argv[2], function (config) {
           l.log(metrics[midx].toString());
         }
         var bits = metrics[midx].toString().split(':');
-        var key = bits.shift()
-                      .replace(/\s+/g, '_')
-                      .replace(/\//g, '-')
-                      .replace(/[^a-zA-Z_\-0-9\.]/g, '');
+        var key = sanitizeKeyName(bits.shift());
 
         if (keyFlushInterval > 0) {
           if (! keyCounter[key]) {
@@ -269,7 +278,16 @@ config.configFile(process.argv[2], function (config) {
       }
 
       stats.messages.last_msg_seen = Math.round(new Date().getTime() / 1000);
-    });
+    }
+
+    // If config.servers isn't specified, use the top-level config for backwards-compatibility
+    var server_config = config.servers || [config]
+    for (var i = 0; i < server_config.length; i++) {
+      // The default server is UDP
+      var server = server_config[i].server || './servers/udp'
+      startServer(server_config[i], server, handlePacket)
+    }
+    serversLoaded = true
 
     mgmtServer = net.createServer(function(stream) {
       stream.setEncoding('ascii');
